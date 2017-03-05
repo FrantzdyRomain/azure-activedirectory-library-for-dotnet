@@ -48,6 +48,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         {
             this.Authenticator = requestData.Authenticator;
             this.CallState = CreateCallState(this.Authenticator.CorrelationId);
+            this.Proxy = requestData.Proxy;
             PlatformPlugin.Logger.Information(this.CallState,
                 string.Format(CultureInfo.CurrentCulture,
                     "=== Token Acquisition started:\n\tAuthority: {0}\n\tResource: {1}\n\tClientId: {2}\n\tCacheType: {3}\n\tAuthentication Target: {4}\n\t",
@@ -93,6 +94,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         protected string Resource { get; set; }
 
         protected ClientKey ClientKey { get; private set; }
+
+        protected IWebProxy Proxy { get; private set; }
 
         protected AuthenticationResultEx ResultEx { get; set; }
 
@@ -230,7 +233,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 
         protected virtual async Task PreRunAsync()
         {
-            await this.Authenticator.UpdateFromTemplateAsync(this.CallState).ConfigureAwait(false);
+            await this.Authenticator.UpdateFromTemplateAsync(this.CallState, this.Proxy).ConfigureAwait(false);
             this.ValidateAuthorityType();
         }
 
@@ -312,7 +315,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 
         private async Task<AuthenticationResultEx> SendHttpMessageAsync(IRequestParameters requestParameters)
         {
-            client = new AdalHttpClient(this.Authenticator.TokenUri, this.CallState)
+            client = new AdalHttpClient(this.Authenticator.TokenUri, this.CallState, this.Proxy)
             { Client = { BodyParameters = requestParameters } };
             TokenResponse tokenResponse = await client.GetResponseAsync<TokenResponse>().ConfigureAwait(false);
             return tokenResponse.GetResult();

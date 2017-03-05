@@ -26,6 +26,7 @@
 //------------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -79,7 +80,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 
         public Guid CorrelationId { get; set; }
 
-        public async Task UpdateFromTemplateAsync(CallState callState)
+        public async Task UpdateFromTemplateAsync(CallState callState, IWebProxy proxy)
         {
             if (!this.updatedFromTemplate)
             {
@@ -88,7 +89,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 string path = authorityUri.AbsolutePath.Substring(1);
                 string tenant = path.Substring(0, path.IndexOf("/", StringComparison.Ordinal));
 
-                AuthenticatorTemplate matchingTemplate = await AuthenticatorTemplateList.FindMatchingItemAsync(this.ValidateAuthority, host, tenant, callState).ConfigureAwait(false);
+                AuthenticatorTemplate matchingTemplate = await AuthenticatorTemplateList.FindMatchingItemAsync(this.ValidateAuthority, host, tenant, callState, proxy).ConfigureAwait(false);
 
                 this.AuthorizationUri = matchingTemplate.AuthorizeEndpoint.Replace("{tenant}", tenant);
                 this.DeviceCodeUri = matchingTemplate.DeviceCodeEndpoint.Replace("{tenant}", tenant);

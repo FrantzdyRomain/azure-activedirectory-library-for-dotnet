@@ -28,6 +28,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Microsoft.IdentityModel.Clients.ActiveDirectory
@@ -39,14 +40,16 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         private string resource;
         private CallState callState;
         private string extraQueryParameters;
+        private IWebProxy proxy;
 
-        public AcquireDeviceCodeHandler(Authenticator authenticator, string resource, string clientId, string extraQueryParameters)
+        public AcquireDeviceCodeHandler(Authenticator authenticator, string resource, string clientId, string extraQueryParameters, IWebProxy proxy)
         {
             this.authenticator = authenticator;
             this.callState = AcquireTokenHandlerBase.CreateCallState(this.authenticator.CorrelationId);
             this.clientKey = new ClientKey(clientId);
             this.resource = resource;
             this.extraQueryParameters = extraQueryParameters;
+            this.proxy = proxy;
         }
         
         private string CreateDeviceCodeRequestUriString()
@@ -87,9 +90,9 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 
         internal async Task<DeviceCodeResult> RunHandlerAsync()
         {
-            await this.authenticator.UpdateFromTemplateAsync(this.callState).ConfigureAwait(false);
+            await this.authenticator.UpdateFromTemplateAsync(this.callState, this.proxy).ConfigureAwait(false);
             this.ValidateAuthorityType();
-            AdalHttpClient client = new AdalHttpClient(CreateDeviceCodeRequestUriString(), this.callState);
+            AdalHttpClient client = new AdalHttpClient(CreateDeviceCodeRequestUriString(), this.callState, this.proxy);
             DeviceCodeResponse response = await client.GetResponseAsync<DeviceCodeResponse>().ConfigureAwait(false);
 
             if (!string.IsNullOrEmpty(response.Error))

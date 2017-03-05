@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -43,11 +44,12 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         private int _timeoutInMilliSeconds = 30000;
         private long _maxResponseSizeInBytes = 1048576;
 
-        public HttpClientWrapper(string uri, CallState callState)
+        public HttpClientWrapper(string uri, CallState callState, IWebProxy proxy)
         {
             this.uri = uri;
             this.Headers = new Dictionary<string, string>();
             this.CallState = callState;
+            this.Proxy = proxy;
         }
 
         protected CallState CallState { get; set; }
@@ -59,6 +61,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         public string ContentType { get; set; }
 
         public bool UseDefaultCredentials { get; set; }
+
+        public IWebProxy Proxy { get; set; }
 
         public Dictionary<string, string> Headers { get; private set; }
 
@@ -72,7 +76,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 
         public async Task<IHttpWebResponse> GetResponseAsync()
         {
-            using (HttpClient client = new HttpClient(HttpMessageHandlerFactory.GetMessageHandler(this.UseDefaultCredentials)))
+            using (HttpClient client = new HttpClient(HttpMessageHandlerFactory.GetMessageHandler(this.UseDefaultCredentials, this.Proxy)))
             {
                 client.MaxResponseContentBufferSize = _maxResponseSizeInBytes;
                 client.DefaultRequestHeaders.Accept.Clear();

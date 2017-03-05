@@ -27,6 +27,7 @@
 
 using System;
 using System.Globalization;
+using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -156,6 +157,12 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         }
 
         /// <summary>
+        /// Property used to provide a proxy that can be used for any HTTP calls out to Azure AD.
+        /// Note: This setting will only effect requests to HTTP endpoints, it will have no effect on the login web view.
+        /// </summary>
+        public IWebProxy Proxy { get; set; }
+
+        /// <summary>
         /// Acquires device code from the authority.
         /// </summary>
         /// <param name="resource">Identifier of the target resource that is the recipient of the requested token.</param>
@@ -175,7 +182,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         /// <returns>It contains Access Token, Refresh Token and the Access Token's expiration time.</returns>
         public async Task<DeviceCodeResult> AcquireDeviceCodeAsync(string resource, string clientId, string extraQueryParameters)
         {
-            var handler = new AcquireDeviceCodeHandler(this.Authenticator, resource, clientId, extraQueryParameters);
+            var handler = new AcquireDeviceCodeHandler(this.Authenticator, resource, clientId, extraQueryParameters, this.Proxy);
             return await handler.RunHandlerAsync().ConfigureAwait(false);
         }
 
@@ -198,7 +205,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 TokenCache = this.TokenCache,
                 ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled,
                 Resource = deviceCodeResult.Resource,
-                ClientKey = new ClientKey(deviceCodeResult.ClientId)
+                ClientKey = new ClientKey(deviceCodeResult.ClientId),
+                Proxy = this.Proxy
             };
 
             var handler = new AcquireTokenByDeviceCodeHandler(requestData, deviceCodeResult);
@@ -456,7 +464,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 TokenCache = this.TokenCache,
                 Resource = resource,
                 ClientKey = new ClientKey(clientId),
-                ExtendedLifeTimeEnabled = ExtendedLifeTimeEnabled
+                ExtendedLifeTimeEnabled = ExtendedLifeTimeEnabled,
+                Proxy = this.Proxy
             };
             var handler = new AcquireTokenInteractiveHandler(requestData, redirectUri, null, userId, extraQueryParameters, null);
             return await handler.CreateAuthorizationUriAsync(this.CorrelationId).ConfigureAwait(false);
@@ -508,7 +517,6 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 
         private async Task<AuthenticationResult> AcquireTokenByAuthorizationCodeCommonAsync(string authorizationCode, Uri redirectUri, ClientKey clientKey, string resource)
         {
-
             const string nullResource = "null_resource_as_optional";
             RequestData requestData = new RequestData
             {
@@ -516,7 +524,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 TokenCache = this.TokenCache,
                 Resource = resource,
                 ClientKey = clientKey,
-                ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled
+                ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled,
+                Proxy = this.Proxy
             };
             if (requestData.Resource == null)
             {
@@ -535,7 +544,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 Resource = resource,
                 ClientKey = clientKey,
                 ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled,
-                SubjectType = TokenSubjectType.Client
+                SubjectType = TokenSubjectType.Client,
+                Proxy = this.Proxy
             };
             var handler = new AcquireTokenForClientHandler(requestData);
             return await handler.RunAsync().ConfigureAwait(false);
@@ -549,7 +559,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 TokenCache = this.TokenCache,
                 Resource = resource,
                 ClientKey = clientKey,
-                ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled
+                ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled,
+                Proxy = this.Proxy
             };
 
             var handler = new AcquireTokenOnBehalfHandler(requestData, userAssertion);
@@ -569,7 +580,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 TokenCache = this.TokenCache,
                 Resource = resource,
                 ClientKey = new ClientKey(clientId),
-                ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled
+                ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled,
+                Proxy = this.Proxy
             };
             var handler = new AcquireTokenNonInteractiveHandler(requestData, userCredential);
             return await handler.RunAsync().ConfigureAwait(false);
@@ -584,6 +596,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 Resource = resource,
                 ClientKey = new ClientKey(clientId),
                 ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled,
+                Proxy = this.Proxy
             };
             var handler = new AcquireTokenNonInteractiveHandler(requestData, userAssertion);
             return await handler.RunAsync().ConfigureAwait(false);
@@ -598,6 +611,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 Resource = resource,
                 ClientKey = new ClientKey(clientId),
                 ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled,
+                Proxy = this.Proxy
             };
             var handler = new AcquireTokenInteractiveHandler(requestData, redirectUri, parameters, userId, extraQueryParameters, this.CreateWebAuthenticationDialog(parameters));
             return await handler.RunAsync().ConfigureAwait(false);
@@ -611,7 +625,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 TokenCache = this.TokenCache,
                 Resource = resource,
                 ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled,
-                ClientKey = clientKey
+                ClientKey = clientKey,
+                Proxy = this.Proxy
             };
 
             var handler = new AcquireTokenSilentHandler(requestData, userId, parameters);

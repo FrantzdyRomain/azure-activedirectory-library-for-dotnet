@@ -116,7 +116,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         internal async Task<Uri> CreateAuthorizationUriAsync(Guid correlationId)
         {
             this.CallState.CorrelationId = correlationId;
-            await this.Authenticator.UpdateFromTemplateAsync(this.CallState).ConfigureAwait(false);
+            await this.Authenticator.UpdateFromTemplateAsync(this.CallState, this.Proxy).ConfigureAwait(false);
             return this.CreateAuthorizationUri();
         }
         protected override void AddAditionalRequestParameters(DictionaryRequestParameters requestParameters)

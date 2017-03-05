@@ -45,11 +45,12 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         internal bool Resiliency = false;
         internal bool RetryOnce = true;
 
-        public AdalHttpClient(string uri, CallState callState)
+        public AdalHttpClient(string uri, CallState callState, IWebProxy proxy)
         {
             this.RequestUri = CheckForExtraQueryParameter(uri);
-            this.Client = PlatformPlugin.HttpClientFactory.Create(RequestUri, callState);
+            this.Client = PlatformPlugin.HttpClientFactory.Create(RequestUri, callState, proxy);
             this.CallState = callState;
+            this.Proxy = Proxy;
         }
 
         internal string RequestUri { get; set; }
@@ -57,6 +58,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         public IHttpClient Client { get; private set; }
 
         public CallState CallState { get; private set; }
+
+        public IWebProxy Proxy { get; private set; }
 
         public async Task<T> GetResponseAsync<T>()
         {
@@ -181,7 +184,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 
             string responseHeader = await PlatformPlugin.DeviceAuthHelper.CreateDeviceAuthChallengeResponse(responseDictionary).ConfigureAwait(false);
             IRequestParameters rp = this.Client.BodyParameters;
-            this.Client = PlatformPlugin.HttpClientFactory.Create(CheckForExtraQueryParameter(responseDictionary["SubmitUrl"]), this.CallState);
+            this.Client = PlatformPlugin.HttpClientFactory.Create(CheckForExtraQueryParameter(responseDictionary["SubmitUrl"]), this.CallState, this.Proxy);
             this.Client.BodyParameters = rp;
             this.Client.Headers["Authorization"] = responseHeader;
             return await this.GetResponseAsync<T>(false).ConfigureAwait(false);

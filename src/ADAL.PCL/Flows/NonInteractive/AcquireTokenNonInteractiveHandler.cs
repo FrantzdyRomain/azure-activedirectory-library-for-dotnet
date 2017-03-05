@@ -102,7 +102,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
             await base.PreTokenRequest().ConfigureAwait(false);
             if (this.PerformUserRealmDiscovery())
             {
-                UserRealmDiscoveryResponse userRealmResponse = await UserRealmDiscoveryResponse.CreateByDiscoveryAsync(this.Authenticator.UserRealmUri, this.userCredential.UserName, this.CallState).ConfigureAwait(false);
+                UserRealmDiscoveryResponse userRealmResponse = await UserRealmDiscoveryResponse.CreateByDiscoveryAsync(this.Authenticator.UserRealmUri, this.userCredential.UserName, this.CallState, this.Proxy).ConfigureAwait(false);
                 PlatformPlugin.Logger.Information(this.CallState, string.Format(CultureInfo.CurrentCulture, " User with hash '{0}' detected as '{1}'", PlatformPlugin.CryptographyHelper.CreateSha256Hash(this.userCredential.UserName), userRealmResponse.AccountType));
 
                 if (string.Compare(userRealmResponse.AccountType, "federated", StringComparison.OrdinalIgnoreCase) == 0)
@@ -112,10 +112,10 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                         throw new AdalException(AdalError.MissingFederationMetadataUrl);
                     }
                     
-                    WsTrustAddress wsTrustAddress = await MexParser.FetchWsTrustAddressFromMexAsync(userRealmResponse.FederationMetadataUrl, this.userCredential.UserAuthType, this.CallState).ConfigureAwait(false);
+                    WsTrustAddress wsTrustAddress = await MexParser.FetchWsTrustAddressFromMexAsync(userRealmResponse.FederationMetadataUrl, this.userCredential.UserAuthType, this.CallState, this.Proxy).ConfigureAwait(false);
                     PlatformPlugin.Logger.Information(this.CallState, string.Format(CultureInfo.CurrentCulture, " WS-Trust endpoint '{0}' fetched from MEX at '{1}'", wsTrustAddress.Uri, userRealmResponse.FederationMetadataUrl));
 
-                    WsTrustResponse wsTrustResponse = await WsTrustRequest.SendRequestAsync(wsTrustAddress, this.userCredential, this.CallState, userRealmResponse.CloudAudienceUrn).ConfigureAwait(false);
+                    WsTrustResponse wsTrustResponse = await WsTrustRequest.SendRequestAsync(wsTrustAddress, this.userCredential, this.CallState, userRealmResponse.CloudAudienceUrn, this.Proxy).ConfigureAwait(false);
                     PlatformPlugin.Logger.Information(this.CallState, string.Format(CultureInfo.CurrentCulture, " Token of type '{0}' acquired from WS-Trust endpoint", wsTrustResponse.TokenType));
 
                     // We assume that if the response token type is not SAML 1.1, it is SAML 2

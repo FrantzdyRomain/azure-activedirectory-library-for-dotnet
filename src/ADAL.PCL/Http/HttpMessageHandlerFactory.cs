@@ -25,8 +25,10 @@
 //
 //------------------------------------------------------------------------------
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,14 +37,22 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 {
     internal static class HttpMessageHandlerFactory
     {
-        internal static HttpMessageHandler GetMessageHandler(bool useDefaultCredentials)
+        internal static HttpMessageHandler GetMessageHandler(bool useDefaultCredentials, IWebProxy proxy = null)
         {
             if (MockHandlerQueue.Count > 0)
             {
                 return MockHandlerQueue.Dequeue();
             }
 
-            return new HttpClientHandler { UseDefaultCredentials = useDefaultCredentials };
+            HttpClientHandler handler = new HttpClientHandler { UseDefaultCredentials = useDefaultCredentials };
+
+            if (proxy != null && handler.SupportsProxy)
+            {
+                handler.UseProxy = true;
+                handler.Proxy = proxy;
+            }
+
+            return handler;
         }
 
         private readonly static Queue<HttpMessageHandler> MockHandlerQueue = new Queue<HttpMessageHandler>();
